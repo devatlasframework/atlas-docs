@@ -1,0 +1,17 @@
+# Site build output (toolchain TBD)
+node_modules/
+dist/
+build/
+.cache/
+
+# Env & IDE
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Claude Code (personal)
+.claude/settings.local.json
