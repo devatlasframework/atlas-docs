@@ -25,7 +25,14 @@ const LOG = 'changelog/CHANGELOG.md';
 const problems = [];
 
 if (!existsSync(STAMP)) {
-  console.log(`${STAMP} absent: no contract has been mirrored yet, nothing to verify.`);
+  // Deleting the stamp must not be a way past this check: with either mirrored file present, a
+  // missing stamp is a failure, not "nothing to verify".
+  const orphans = [SPEC, LOG].filter((p) => existsSync(p));
+  if (orphans.length) {
+    console.error(`verify-mirror: ${orphans.join(' and ')} present but ${STAMP} is missing - re-run the mirror, never remove the stamp`);
+    process.exit(1);
+  }
+  console.log(`${STAMP} absent and nothing mirrored: nothing to verify.`);
   process.exit(0);
 }
 

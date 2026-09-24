@@ -19,12 +19,13 @@ to an ATLAS release number.
 
 ## How it gets here
 
-At each ATLAS release cut, the contract is copied from the release branch, but only after that
-branch's own contract checks have passed at the exact commit being copied: a lint of the file as
-OpenAPI 3.1, and tests that compare it with the running application's routes, error codes, enums
-and response fields. The copy lands on this repository's `develop` branch when the release goes to
-testing, and reaches `main` when that release reaches Production. So **`main` describes the API in
-Production**, and `develop` may describe one that has not arrived there yet.
+When an ATLAS release is cut, the contract is copied from the release branch, but only after
+that branch's own contract checks have passed at the exact commit being copied: a lint of the file
+as OpenAPI 3.1, and tests that compare it with the running application's routes, error codes, enums
+and response fields. The copy is merged to this repository's `develop` branch once the release has
+passed testing, and `develop` is merged to `main` only when that release is promoted to Production.
+So `main` describes the API that Production serves, and `develop` may describe a contract that has
+not reached Production yet.
 
 ## Reading it
 

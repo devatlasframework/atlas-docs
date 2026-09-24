@@ -23,8 +23,10 @@ current published site and the OpenAPI description on `main` are supported.
 | `develop`                      | :white_check_mark: | Staged content — report anything you find here too         |
 | Archived or cached older pages | :x:                | Snapshots and third-party mirrors are not maintained by us |
 
-The **OpenAPI description** in `api/` is mirrored from the platform's own `packages/api-spec` at
-each release, and describes the API version currently in Production. Documented API versions follow
+The **OpenAPI description** in `api/` is copied from the platform's own `packages/api-spec` when a
+release is cut, and [`api/MIRROR.md`](api/MIRROR.md) names which contract version it is. On `main` it
+describes the API currently in Production. On `develop` it can describe a contract that is in
+testing and has **not reached Production yet**. Report anything you find in either. Documented API versions follow
 the platform's own deprecation policy; documentation for a retired API version is removed rather
 than maintained.
 
