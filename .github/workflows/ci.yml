@@ -20,6 +20,20 @@ jobs:
       - run: npx --yes markdownlint-cli2 "**/*.md"
       # A link checker joins here when the docs site lands.
 
+  # The mirrored API contract (ATLAS-624): api/openapi.yaml and
+  # changelog/CHANGELOG.md must match the checksums in api/MIRROR.md, and the
+  # stamp, info.version and the changelog must name one contract version. It
+  # cannot see the private source; the mirror script checks that side.
+  verify-mirror:
+    name: verify-mirror
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node .github/scripts/verify-mirror.mjs
+
   gitleaks:
     name: gitleaks
     runs-on: ubuntu-latest
