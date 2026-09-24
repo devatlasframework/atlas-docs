@@ -8,9 +8,9 @@ Served as the `/docs` site (UI map P10/D8).
 
 | Path | What |
 |---|---|
-| `api/` | The published OpenAPI description (mirrored from `atlas` → `packages/api-spec` at release) |
-| `guides/` | Quickstart, auth, webhooks, pagination, errors — prose guides |
-| `changelog/` | API changelog, one entry per released change |
+| `api/` | The published OpenAPI description, mirrored from `atlas` → `packages/api-spec` at each release cut; `api/MIRROR.md` names the contract version |
+| `guides/` | Prose developer guides — none written yet |
+| `changelog/` | The API contract's changelog, one entry per contract version (mirrored with the spec) |
 
 ## Prerequisites
 
@@ -18,7 +18,8 @@ Served as the `/docs` site (UI map P10/D8).
 
 ## How to run it locally / tests
 
-> Placeholder until the site toolchain lands: markdown lint + link check in CI.
+> No site toolchain yet. CI runs markdownlint, gitleaks and `verify-mirror`; run the last locally with
+> `node .github/scripts/verify-mirror.mjs`. There is no link checker yet.
 
 ## Branching & releases
 

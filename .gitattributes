@@ -10,3 +10,6 @@
 *.pdf binary
 *.woff binary
 *.woff2 binary
+# Mirrored byte for byte from atlas; the stamp checksums the LF bytes (ATLAS-624).
+api/openapi.yaml text eol=lf
+changelog/CHANGELOG.md text eol=lf
