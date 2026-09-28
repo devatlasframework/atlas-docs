@@ -29,6 +29,10 @@ not reached Production yet.
 
 ## Reading it
 
-Descriptions sometimes cite `ADR-…`, `ATLAS-…` or `#…` numbers. Those point to the platform's
-internal decision records and tracker, which are not public; the sentence around each one says
-what the rule is. Rewording those descriptions for a public audience is planned.
+Every description is written for you. From contract `1.6.0` on, none cites a document you cannot
+open: no internal tracker or decision-record numbers, no section numbers of internal plans, and no
+screen or step identifiers. Each states the rule it once cited. A check on the source refuses any
+such citation before a release can be cut, so it cannot come back. The references that remain are
+public: an RFC section such as `RFC 6749 §4.1.3`, and codes the API itself returns, such as the
+feature-family codes `F1`–`F13` and `A1`–`A8` and the learner-profile dimension codes `D1`, `D2a` and
+so on.
