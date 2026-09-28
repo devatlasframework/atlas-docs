@@ -1,9 +1,11 @@
 # Security Policy
 
-`atlas-docs` holds the public developer documentation for the ATLAS API and the published OpenAPI
-description. It ships no running code — but documentation has a real security surface: if a guide
-teaches an unsafe pattern, or the OpenAPI description misstates how authentication or scopes work,
-every integration built from it inherits that mistake. We treat those as security bugs, not typos.
+`atlas-docs` holds the published copy of the ATLAS API contract — the OpenAPI description — and its
+changelog. The developer documentation built from that contract is served by the ATLAS web app at
+`/docs`. Neither ships running code from here, but documentation has a real security surface: if a
+guide teaches an unsafe pattern, or the OpenAPI description misstates how authentication or scopes
+work, every integration built from it inherits that mistake. We treat those as security bugs, not
+typos, and this is the place to report them for both.
 
 This repository is also a **public reporting entry point for the whole ATLAS platform**. Most ATLAS
 repositories are private, so if you have found a security issue anywhere in ATLAS — the API, the web
@@ -14,12 +16,12 @@ internally. Please do not go looking for somewhere better to file it.
 
 ## Supported Versions
 
-Documentation is **continuously published** and is not versioned in releases of its own. Only the
-current published site and the OpenAPI description on `main` are supported.
+This repository is updated when an ATLAS release is cut; the docs pages ship with the web app in the
+same release. Only what is current on `main` and `develop` is supported.
 
 | Version                        | Supported          | Notes                                                      |
 | ------------------------------ | ------------------ | ---------------------------------------------------------- |
-| Published docs site (`main`)   | :white_check_mark: | The live documentation                                     |
+| `main`                         | :white_check_mark: | The contract Production serves                             |
 | `develop`                      | :white_check_mark: | Staged content — report anything you find here too         |
 | Archived or cached older pages | :x:                | Snapshots and third-party mirrors are not maintained by us |
 
@@ -94,7 +96,7 @@ Tenant isolation is the platform's first non-negotiable.
 | **Unsafe guidance**              | Any guide, quickstart, or sample that teaches an insecure pattern — API keys in browser code, credentials in URLs or query strings, TLS verification disabled, secrets in examples that look copy-pasteable |
 | **Incorrect security semantics** | The OpenAPI description or a guide misstating authentication, scopes, roles, rate limits, or tenancy rules — anywhere the docs promise a guarantee the API does not make                                    |
 | **Leaked material**              | A real credential, token, internal hostname, or private endpoint committed here or embedded in an example, in the tree or in git history                                                                    |
-| **Docs site** (once built)       | XSS or content injection in the published site · a supply-chain issue in the site toolchain · a vulnerable dependency with a reachable path                                                                 |
+| **Docs pages** (`/docs`)         | XSS or content injection in a docs page · a docs page that asks for a credential or sends a request with one · a vulnerable dependency with a reachable path                                                |
 | **Links and integrity**          | A link, redirect, or embedded asset pointing to a domain we do not control, or to a package that is not ours                                                                                                |
 | **The ATLAS platform itself**    | Anything in the hosted service — cross-tenant access, IDOR, authentication or MFA bypass, prompt injection, privacy leaks. Report it here and we will route it                                              |
 
@@ -107,11 +109,13 @@ your report — the first few characters and its location are enough for us to i
 - **Ordinary documentation bugs** — typos, broken links, stale screenshots, unclear prose. Those are
   very welcome as normal issues or pull requests; they just are not security reports.
 - **Reports with no proof of concept**, or raw scanner or AI-tool output.
-- **Dependency CVEs with no reachable path** in the published site. Show the path and it is in scope.
+- **Dependency CVEs with no reachable path** in the docs pages. Show the path and it is in scope.
 - Findings that apply only to our non-Production environments, which are internal, hold no real user
   data, and are not hardened to Production standards.
-- Missing security headers on pages with no sensitive action and no demonstrated impact — the docs
-  site is static and holds no user data or session.
+- Missing security headers on a page with no sensitive action and no demonstrated impact. This does
+  **not** cover the docs pages as an exception: `/docs` is served from the same origin as the rest of
+  the ATLAS web app and its sessions, so a header, framing or content-security-policy regression there
+  is handled like one on any other app page. Report it.
 - Email spoofing on domains that send no mail, without a working phishing proof of concept.
 - Copyright and abuse complaints about content hosted on the platform — those go through the
   takedown process described in the API documentation, not through this policy.
@@ -127,8 +131,8 @@ ATLAS organisation. When testing, you must not:
 - Access, modify, download, or retain data belonging to anyone but yourself. **If you achieve access
   to another organisation's data, stop immediately** — do not enumerate and do not pivot. One record
   proving it is exactly the right amount of evidence.
-- Run automated scanners, fuzzers, or credential-stuffing tools against the hosted service or the
-  docs site.
+- Run automated scanners, fuzzers, or credential-stuffing tools against the hosted service or its
+  docs pages.
 - Perform denial-of-service, load, or stress testing.
 - Use a credential you discovered, or attempt to widen access with it.
 - Social-engineer, phish, or physically target any person.

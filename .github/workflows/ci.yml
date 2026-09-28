@@ -18,7 +18,6 @@ jobs:
         with:
           node-version: 22
       - run: npx --yes markdownlint-cli2 "**/*.md"
-      # A link checker joins here when the docs site lands.
 
   # The mirrored API contract (ATLAS-624): api/openapi.yaml and
   # changelog/CHANGELOG.md must match the checksums in api/MIRROR.md, and the
