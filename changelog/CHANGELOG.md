@@ -1,20 +1,129 @@
 # Changelog — the ATLAS public API contract
 
-This is the changelog of the **contract**, not of the product ([ADR-0064](../../docs/adr/0064-the-contract-has-its-own-version.md)).
-`info.version` in `openapi.yaml` moves only when the surface described here moves; the
-product's own version lives in `apps/api/pom.xml` and the root `CHANGELOG.md`, moves at
-every release cut, and the two are allowed to disagree. That they disagree is the point.
+This is the changelog of the **contract**, not of the ATLAS product. `info.version` in
+`openapi.yaml` moves only when the surface described there moves; the product has release
+numbers of its own, which move at every release, and the two are allowed to disagree.
+That they disagree is the point: pin to the contract's version.
 
-The architecture plan §11.10 promises _"backwards-compatible within a version; clear
-deprecation notices and a changelog"_. This file is that changelog.
+ATLAS promises that `/v1` stays backwards-compatible within a version, with clear
+deprecation notices and a changelog. This file is that changelog.
 
-**Every PR that changes `paths:` or `components:` adds an entry here and bumps
-`info.version`.** `.github/scripts/validate-spec-changelog.mjs` fails the `spec-lint` check
-otherwise — it reads the PR diff, which is why it is a script rather than a test.
+**Every change to either published file — the contract or this changelog — bumps
+`info.version` and adds an entry here.** The build refuses a change that does neither.
 
 Versions are SemVer: **minor** for additive, backwards-compatible change (a new operation,
 a new optional field, a new enum value); **patch** for corrections that change no shape.
 There is no major inside `/v1` — a breaking change means `/v2`, never an edit.
+
+## 1.7.0 — 2026-09-26
+
+**The delegated pass names the operation that issues it.** `delegatedPassAuth` now carries
+`x-atlas-issued-by: exchangeDelegatedToken`. Until this version, the only link between the scheme
+and the token exchange was a sentence in the scheme's description. The token exchange takes no
+credential, like the product's own sign-in and consent operations, so nothing a tool could read
+told them apart.
+
+Nothing on the wire changed. No operation, field, header, status or code moved. It is a minor
+version because it adds a value that tools read and act on: the ATLAS SDKs cover every operation
+whose `security` admits an API key or a delegated pass, plus the operation a scheme names in
+`x-atlas-issued-by`, and they read that set from this file rather than from a list anyone keeps.
+
+### What you need to do
+
+- **Nothing, unless you generate a client.** If you do, the extension tells your generator where a
+  pass comes from. It names an operation for your server to call, never a flow for a tool to run.
+
+## 1.6.0 — 2026-09-25
+
+Written for you. This version rewrites the contract for a reader outside ATLAS and makes every
+refusal carry a code. It also declares the rate-limit refusals the API always could send. No
+operation was added or removed and no success response changed shape. Where the wire changed, a
+refusal that used to answer without a code, or with a `500`, now answers a `400` with one.
+
+It is a minor version for two reasons. It adds error codes, which are new values you can branch
+on, the same as a new enum value. And it declares responses that were already possible but never
+described.
+
+**The descriptions cite nothing you cannot open.** About 640 descriptions pointed at documents
+outside this contract: private tickets, design records, section numbers of internal plans, and
+screen and step identifiers. Each now states the rule it was citing. The file carries no YAML
+comments, and this changelog has had the same rewrite. If you generated anything from `1.5.0`,
+the docstrings change; nothing else about those operations does.
+
+**Every refusal carries an `errorCode`, and that is what to branch on.** `Problem` now says so,
+and the API description names the one exception: a path with an encoded slash or a NUL byte,
+which the web server refuses before this API sees it.
+`type` is an identifier to compare, never a link to fetch: nothing is published at those
+addresses yet, and `type` is coarser than the code. New codes:
+
+- `ATLAS-VAL-002`: a body that could not be read. It is not JSON, or a value cannot take its
+  field's type, such as a string where a number belongs or a name an enum does not know. It was a
+  `400` with no code.
+- `ATLAS-VAL-003`: a path, query or header value that could not be read, or a required one that
+  is absent. It was a `400` with no code, and it quoted the value back.
+- `ATLAS-DEV-020`: a profile sent to `presentForEndUser` that disagrees with the instrument. See
+  below.
+- `ATLAS-SYS-009`: a method the address does not answer (`405`).
+- `ATLAS-SYS-010`: a `Content-Type` or `Accept` an operation cannot serve (`415`/`406`).
+- `ATLAS-FRM-010` and `ATLAS-FRM-011`: the discussion live link's connection cap (`429`, no
+  `Retry-After`) and a token too close to expiry to open one on (`503`). Both answered with no
+  code before; the connection cap was already described as told apart by its code.
+- An address nothing answers at is now `404` with `ATLAS-SYS-005`, and a query parameter over its
+  stated bound is `400` with `ATLAS-VAL-001`, the same code a body field gets.
+
+The API already sent thirteen codes that this contract never named. They are now documented on
+the operations that raise them:
+
+- verification and password-reset links: `ATLAS-AUTH-002`, `-003`, `-008`, `-009`;
+- the resend cooldown: `ATLAS-AUTH-004`;
+- a session that could not be started because the account changed mid-sign-in: `ATLAS-AUTH-023`;
+- a stored upload that is not the one expected: `ATLAS-CNT-009`;
+- the storage allowance: `ATLAS-CNT-025`;
+- a highlighted range that does not match its block: `ATLAS-CNT-021`;
+- note export: `ATLAS-CNT-022`, `-023`;
+- quiet hours: `ATLAS-NOTIF-001`;
+- an already-registered email: `ATLAS-AUTH-001`.
+
+Errors arrays name fields the same way everywhere: properties dotted, map keys and indices in
+brackets. No refusal repeats a value you sent in a body or a query; a problem's `instance`
+is the request's own path.
+
+**Every operation a request-rate limit can refuse now declares its `429`.** That is 133 more
+operations. They include `listResources`, `getResource` and `getResourceDownload`, which an API
+key reaches. The authenticated ones share one description, `Throttled`, which carries
+`Retry-After` and the three `RateLimit-*` headers. `RateLimit-Remaining` reads zero on it
+whichever budget refused, yours or your organisation's. The AI-allowance read still never
+answers `429`, by design.
+
+**`presentForEndUser` holds the profile you send to the instrument.** A profile that disagrees
+used to reach the engine. A sub-dimension or category the instrument does not have, the wrong
+shape for a code, a missing score or a score off the 1-5 scale was a `500`. The multi-category
+shape under a bipolar code with both poles present was a `200` that endorsed both opposite
+poles. Each is now a `400`: `ATLAS-DEV-020` names every field that disagrees, and never the
+value. The profile's maps and lists carry size bounds (`ATLAS-VAL-001`), and `BipolarScore.score`
+and each category score declare `1`-`5`.
+
+**The delegated pass is declared as a bearer token, `delegatedPassAuth`, not as an OAuth flow.**
+The `oauth2` scheme named hosts that do not exist and a form-encoded token leg that the token
+endpoint refuses. Documentation tools and generated clients act on a declared flow, so it could
+not be used as written. The pass itself, the header, the three operations that accept it and
+the `content:read` permission are unchanged. The scheme's description now says how to obtain a
+pass, and this contract names no host at all.
+
+**Tags are one declared set.** There is a top-level `tags:` array with a description for each of
+17 tags. Three tags were renamed: `Reader` → `reader`, `Discussions` → `discussions`,
+`Peer review` → `peer-review`. Seventeen operations that carried no tag now carry `reader` (the
+tutor) or the new `progress` (progress, mastery, recommendations, goals and study reminders). A
+client generated per tag gets different class names for those groups.
+
+### What you need to do
+
+- **Branch on `errorCode`.** If you branched on the problem `type`, or on a status alone, move to
+  the code.
+- **If your auth configuration names the delegated scheme**, it is now `delegatedPassAuth`. The
+  credential and the header are the same.
+- **If you generate a client**, regenerate it. The tag renames and the new `429` declarations
+  change what is generated. The wire does not change.
 
 ## 1.5.0 — 2026-09-22
 
@@ -26,8 +135,8 @@ field changed shape, and no existing response body changed.
 
 Four things are worth reading before you build against it.
 
-**Delivery is at-least-once, and §11.9's sequence diagram says otherwise.** That
-diagram promises _"retry later (no duplicates)"_ and this release contradicts it in
+**Delivery is at-least-once, and an earlier description of it said otherwise.** That
+description promised _"retry later (no duplicates)"_, and this release corrects it in
 public rather than leaving you to discover it. ATLAS retries a delivery whose outcome
 it did not observe, and a process that died after your server answered is
 indistinguishable from one that died before it did. Every message carries a
@@ -57,8 +166,8 @@ reading back what answered are, together, a port scanner pointed wherever the ca
 likes — so withholding only the synchronous test button, which was the first design,
 would have been a distinction with no security content. A key may sit in a CI job or a
 leaked `.env`; a person pressing a button on a screen may not. Making that scope live
-needs a narrower vocabulary than "manage", which is a §11.4 change rather than a
-filter edit.
+needs a narrower vocabulary than "manage", which is a change to the permission
+vocabulary rather than a filter edit.
 
 Three operations return a signing secret — registration, rotation and an explicit
 reveal — and unlike an API key, a webhook secret is stored encrypted rather than
@@ -100,8 +209,8 @@ to several, so this is a decision you make per request rather than a detail.
 
 **The token endpoint takes JSON, not `application/x-www-form-urlencoded`.** This
 departs from RFC 6749 deliberately: every other operation in this contract is plain
-JSON (§11.6) and the three published SDKs are generated from one document, so a
-single form-encoded endpoint would be the only one of its kind. The practical
+JSON and client libraries are generated from one document, so a single form-encoded
+endpoint would be the only one of its kind. The practical
 consequence is that an off-the-shelf OAuth2 client library will not work against
 this leg unmodified. The response field names _are_ RFC 6749's — `access_token`,
 `token_type`, `expires_in`, `refresh_token`.
@@ -154,8 +263,8 @@ reached before, and `redirectUris` is optional everywhere — an application tha
 uses sign-in on behalf registers none and behaves as it always did.
 
 `profiles:read` remains **reserved** and is not in the `oauth2` flow's scopes. A
-learner's profile and questionnaire answers are the one category §9.15 puts beyond
-every plan, setting and role; serving them to an application a person has themselves
+learner's profile and questionnaire answers are the one category beyond every plan,
+setting and role; serving them to an application a person has themselves
 authorised is a coherent thing to want and is a decision not yet taken, rather than
 an omission.
 
@@ -171,7 +280,7 @@ exactly what they reached before: their own identity, and nothing else.
 
 ### Added
 
-- **Permission scopes (§11.4)**, published on the `apiKeyAuth` scheme as
+- **Permission scopes**, published on the `apiKeyAuth` scheme as
   `x-atlas-scopes` and named per operation. Eight names ship, four of them
   reserved and reaching nothing yet — reserved rather than omitted, because a name
   that appears later is a new version of the vocabulary, while a name that exists
@@ -205,8 +314,8 @@ exactly what they reached before: their own identity, and nothing else.
   instant by construction. This is the instant-changes half — the features ATLAS
   recommends and the presentation plan — and it spends no AI allowance. Revoking
   the link refuses it immediately.
-- **An `Idempotency-Key` header** on `POST /o/{orgId}/end-users` (§11.6's
-  repeat-guard tag). Optional. The same key with the same body replays the first
+- **An `Idempotency-Key` header** on `POST /o/{orgId}/end-users`, a repeat
+  guard. Optional. The same key with the same body replays the first
   outcome; the same key with a **different** body is refused `409` rather than
   answered with somebody else's result, because a repeat guard promises a retry
   does not act twice and promises nothing about one key meaning two things.
@@ -222,7 +331,7 @@ exactly what they reached before: their own identity, and nothing else.
 ### Changed
 
 - `CreateApiKeyRequest` no longer says scopes are ignored. They are accepted and
-  enforced. The IP allowlist is still described in §11.11 and still absent.
+  enforced. An IP allowlist is still planned and still absent.
 
 ### Error codes
 
@@ -241,7 +350,7 @@ exactly what they reached before: their own identity, and nothing else.
 Developer accounts, applications and API keys. A second way to authenticate arrives with this
 release — an API key, sent as `Authorization: Bearer atl_sk_live_…` — together with the
 endpoints that create and manage one. **A key currently reaches exactly one endpoint,
-`GET /key`, which describes the key itself.** Everything §11.6 describes is still reached with
+`GET /key`, which describes the key itself.** Everything else in this contract is still reached with
 a signed-in user's access token; key access to it, and the permission scopes that will bound
 it, arrive in a later release. No operation was removed, no field changed shape, and no
 existing response body changed.
@@ -336,8 +445,8 @@ existing response body changed.
 
 ## 1.0.1 — 2026-09-15
 
-Corrections found by the `reviewer` and `security-reviewer` passes over `1.0.0`
-(ATLAS-595). No operation was added or removed and no field changed shape.
+Corrections to `1.0.0`, found in review. No operation was added or removed and no field
+changed shape.
 
 ### Fixed
 
@@ -366,10 +475,10 @@ and not `2.0.0`: a client generated from the previous file still compiles and st
 ### Added
 
 - `500` responses on **all 178 operations**, referencing a new
-  `components/responses/InternalError`. `ApiExceptionHandler` could answer one from any
-  route, stamping `ATLAS-SYS-001` and an `errorId`, and not one operation declared it — so
-  the one response shape every operation shares was untypable by a generated client, and
-  §11.6's "clear errors with a request id" was a promise nobody could keep.
+  `components/responses/InternalError`. The API could answer one from any route, stamping
+  `ATLAS-SYS-001` and an `errorId`, and not one operation declared it — so the one response
+  shape every operation shares was untypable by a generated client, and the promise of
+  clear errors with a request id was one nobody could keep.
 - `401` and `404` on five org-scoped peer-review reads that declared only a `200`
   (`/o/{orgId}/review/rubric`, `/queue`, `/submissions/mine`, `/reviews/mine`,
   `/reviews/of-my-work`). They have always answered both.
@@ -382,7 +491,7 @@ and not `2.0.0`: a client generated from the previous file still compiles and st
 - `contentSchema` on the two SSE responses, naming the payload their prose already
   described (`TutorAnswer`, `DiscussionLivePoke` — both previously referenced by nothing).
 - **The paging convention, stated in `info.description`** — a bounded `limit`, an opaque
-  `cursor`, and a `{items, nextCursor}` envelope (ADR-0065). It is named in the published
+  `cursor`, and a `{items, nextCursor}` envelope. It is named in the published
   description rather than in a YAML comment because generators strip comments: a
   convention written only in comments is one nobody outside this repository can read. The
   four `page`+`size` operations are frozen, and the thirteen unbounded array reads carry
@@ -399,8 +508,8 @@ and not `2.0.0`: a client generated from the previous file still compiles and st
 - **`ATLAS-ORG-003` on 7 descriptions → `ATLAS-ORG-002`.** `ORG-003` is "member, wrong
   role"; non-membership is `ORG-002`. The other 43 occurrences of `ORG-003` were correct
   and are byte-identical.
-- **`study-reminder` added to the unsubscribe `k` enum.** The api has been sending that
-  mail since H5b; a client validating against this enum would have rejected a valid
+- **`study-reminder` added to the unsubscribe `k` enum.** The api was already sending that
+  mail; a client validating against this enum would have rejected a valid
   unsubscribe link.
 - **`POST /invitations/preview` is `security: []`.** It has always been reachable without a
   token — the invitee is logged out by construction and the token in the body is the
@@ -409,12 +518,12 @@ and not `2.0.0`: a client generated from the previous file still compiles and st
 
 ### Changed
 
-- **`info.version` no longer tracks the product** ([ADR-0064](../../docs/adr/0064-the-contract-has-its-own-version.md)).
-  It read `0.3.0-SNAPSHOT`; it now starts its own SemVer line at `1.0.0`.
+- **`info.version` no longer tracks the product.** It read `0.3.0-SNAPSHOT`; it now starts
+  its own SemVer line at `1.0.0`.
 - **89 fields converted from OpenAPI 3.0's `nullable: true`** to the 3.1 form this document
   declares — `type: [X, 'null']`, or `oneOf: [{$ref}, {type: 'null'}]` for the eight
   one-element `allOf` wrappers, five of them money fields a flattening generator would have
   emitted as non-nullable. The generated TypeScript is byte-identical before and after, so
   this changes no client.
-- The two sentences deferring the error-code sweep to ATLAS-527 are removed; the sweep has
-  happened.
+- The two sentences deferring the error-code sweep to a later release are removed; the
+  sweep has happened.
