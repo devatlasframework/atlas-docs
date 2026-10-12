@@ -15,6 +15,86 @@ Versions are SemVer: **minor** for additive, backwards-compatible change (a new 
 a new optional field, a new enum value); **patch** for corrections that change no shape.
 There is no major inside `/v1` — a breaking change means `/v2`, never an edit.
 
+## 1.12.0 — 2026-10-12
+
+**An organisation's usage says what it did not measure, and names nobody in a small group; and a
+person who cannot sign in can still ask to be deleted.** Additive: three new fields on one response, two
+new operations and one new error code.
+
+- `getOrgUsage` gains `unmeasuredCallsToday`: calls today whose cost was not measured. Until now an
+  unpriced day read as `costUsdToday: "0"`, the same as a day of no calls.
+- `getOrgUsage` gains `membersState` (`MemberListState`: `MEASURED` or `WITHHELD`) and `minimumGroupSize` (5). When fewer
+  than five people spent anything today, `members` is empty and `membersState` is `WITHHELD`: a list
+  that short is several named people's days, not an aggregate. A client that ignores the new fields
+  sees an empty list, which it already renders.
+- `requestDataRequestLink` (`POST /auth/data-request`) and `confirmDataRequest`
+  (`POST /auth/data-request-confirm`): a person who cannot sign in - a suspended account above all - asks
+  for their account's deletion by an emailed, single-use link. The first always answers `202`, so it
+  never says whether an address is known; the second records the same request the signed-in privacy
+  settings make and answers its time. `ATLAS-AUTH-033` (`400`, `.../problems/data-request-link-invalid`):
+  the link is unknown, used or expired.
+
+## 1.11.0 — 2026-10-11
+
+**ATLAS can pause AI, and can pause new work, and says which.** Additive: one new operation, one new
+enum value, and two new refusals on existing operations.
+
+- `paused` joins `AllowanceState`: AI extras are switched off by ATLAS for the moment - for this
+  organisation or for everyone - or the platform's daily cap is reached. It is not about the plan, the
+  payment or any allowance, and a client must not say it is. `suspended` wins when both are true. A
+  client that predates it maps it to `unknown` and renders nothing.
+- `ATLAS-SYS-012` (`503`, `.../problems/ai-paused`): a rewrite, summary, definition or concept map asked
+  for while AI is paused, and finalising an upload, whose AI passes cannot run. The streamed
+  re-presentation delivers the same problem in the stream.
+- `ATLAS-SYS-014` (`503`, `.../problems/maintenance`): maintenance mode refuses new work - creating or
+  finishing an upload, checkout and plan changes, creating an organisation, and provisioning an end user
+  or asking for a presentation plan. Reading, progress, notes, quiz answers, the forum, sign-in and
+  payment callbacks keep working.
+- `GET /platform/status` (public): whether ATLAS is in maintenance mode, for the banner every page
+  shows during a window.
+
+## 1.10.0 — 2026-10-10
+
+**Reporting a resource has a daily allowance.** One new refusal on an existing operation.
+
+- `ATLAS-CNT-026`: a `429` on `POST /o/{orgId}/resources/{resourceId}/reports` when this person has
+  filed as many reports in the organisation as one day allows. `Retry-After` is the wait until the
+  oldest of them is a day old. Re-reporting a resource already reported for the same reason still
+  returns the receipt and is never refused.
+
+## 1.9.0 — 2026-10-07
+
+**Reading time is counted, and never against you.** One addition, for ATLAS's own reader.
+
+- `POST /o/{orgId}/reading-minute` records one minute of reading while the reader is open and in
+  use. It takes no body, answers `204`, and counts a minute on the platform's day - never which
+  lecture, never which person. At most one minute is counted per person every 50 seconds; a sooner
+  call is accepted and dropped.
+
+## 1.8.0 — 2026-10-05
+
+**You can download your data, and ask for your account to be deleted.** Two additions on the
+signed-in account, and one new refusal on sign-in.
+
+- `GET /auth/me/export` answers one JSON file with the data ATLAS holds about the signed-in
+  account, including what no organisation can ever see. It never includes credentials. Every
+  download is recorded and announced to the owner by email, and it allows three an hour.
+- `GET`, `POST` and `DELETE /auth/me/erasure-request` read, make and withdraw a request to have
+  the account deleted. ATLAS staff carry the request out. Making a request while one is open
+  answers the open one.
+- `ATLAS-AUTH-029`: a `403` on `POST /auth/login`, `POST /auth/google/exchange`,
+  `POST /auth/mfa/challenge` and `POST /auth/mfa/confirm` when the account has been suspended. It
+  is only returned once the credential has proved who is asking. A suspended account's refresh is
+  answered `401` (`ATLAS-AUTH-007`), as any dead session is.
+
+It is a minor version: new operations and a new error code, and no existing response changed
+shape.
+
+### What you need to do
+
+- **Nothing**, unless you handle sign-in refusals. If you do, show `ATLAS-AUTH-029` as "this
+  account has been suspended" rather than as a wrong password.
+
 ## 1.7.0 — 2026-09-26
 
 **The delegated pass names the operation that issues it.** `delegatedPassAuth` now carries

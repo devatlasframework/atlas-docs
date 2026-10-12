@@ -6,9 +6,9 @@ this repository's `verify-mirror` check fails if either file stops matching its 
 
 | Field | Value |
 | --- | --- |
-| Contract version | `1.7.0` |
-| First published with product release | `0.15.0` |
-| Source commit | `0a01f6b82d68ebc445006185f064d5c27864b9de` |
-| Source commit date | `2026-09-28` |
-| `api/openapi.yaml` sha256 | `c86ec2657cd5a850befd8cc0f7e7b746d3ae3d66fe45dd85727ca09e2804d6ec` |
-| `changelog/CHANGELOG.md` sha256 | `93503660b0e5dee9028531056c1579a0426551cb21c3218411d31742c8c71c90` |
+| Contract version | `1.12.0` |
+| First published with product release | `0.16.0` |
+| Source commit | `b034b9087bd5b10abf373347206f86307dc47d86` |
+| Source commit date | `2026-10-12` |
+| `api/openapi.yaml` sha256 | `259c6495e637e3c231c7b614df1ce0a69748e6799d0dcc16cd85f511f3a8495a` |
+| `changelog/CHANGELOG.md` sha256 | `9f40ab1ca2282226d3ca13ea2bf826db4dd98f226f67f44f60307c95629d1998` |
