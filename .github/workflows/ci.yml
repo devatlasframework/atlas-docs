@@ -13,11 +13,45 @@ jobs:
     name: markdownlint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-      - run: npx --yes markdownlint-cli2 "**/*.md"
+      # Pinned WHOLE (J4, ATLAS-735): `npx markdownlint-cli2@<version>` fixed the linter's own
+      # version but resolved its ~85 transitive packages afresh on every run, so the tree could
+      # change under an unchanged repository. It installs from a committed LOCKFILE instead
+      # (.github/markdownlint/), `npm ci --ignore-scripts`: every package is checked against the
+      # sha512 the lockfile records, and none runs an install script. Installed OUTSIDE the
+      # workspace, so the repository itself still carries no node_modules and no site toolchain.
+      # Dependabot's npm entry for /.github/markdownlint proposes the bumps.
+      - name: Install markdownlint-cli2 from its lockfile
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/markdownlint"
+          cp .github/markdownlint/package.json .github/markdownlint/package-lock.json "$RUNNER_TEMP/markdownlint/"
+          npm ci --prefix "$RUNNER_TEMP/markdownlint" --ignore-scripts --no-audit --no-fund
+      - name: Lint the Markdown
+        run: |
+          "$RUNNER_TEMP/markdownlint/node_modules/.bin/markdownlint-cli2" "**/*.md"
+      # J4 criterion 14 (ATLAS-735): every control SECURITY.md claims as built names a path, or a
+      # path#symbol, that exists in this tree; an owed one names the step that owes it.
+      - run: node scripts/security/check-security-claims.mjs --self-test
+      - run: node scripts/security/check-security-claims.mjs SECURITY.md
+
+  # Every `uses:` in this repository's workflows is pinned by commit SHA (J4 criterion 12,
+  # ATLAS-735; #247): a tag is a pointer its owner can move. The script refuses a tag pin; its
+  # self-test plants one and must catch it. The same script runs in atlas, atlas-infra and
+  # atlas-sdks; Dependabot (.github/dependabot.yml) proposes the bumps. Written to be required.
+  action-pins:
+    name: action-pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - run: node scripts/ci/check-action-pins.mjs --self-test
+      - run: node scripts/ci/check-action-pins.mjs
 
   # The mirrored API contract (ATLAS-624): api/openapi.yaml and
   # changelog/CHANGELOG.md must match the checksums in api/MIRROR.md, and the
@@ -27,8 +61,8 @@ jobs:
     name: verify-mirror
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
       - run: node .github/scripts/verify-mirror.mjs
@@ -40,9 +74,9 @@ jobs:
       contents: read
       pull-requests: write # the action reads PR commits and comments findings
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
