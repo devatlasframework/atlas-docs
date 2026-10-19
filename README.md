@@ -15,6 +15,7 @@ published in the open, byte for byte, with a stamp saying which version it is.
 |---|---|
 | `api/` | The published OpenAPI description, mirrored from `atlas` → `packages/api-spec` at each release cut; `api/MIRROR.md` names the contract version |
 | `changelog/` | The API contract's changelog, one entry per contract version (mirrored with the spec) |
+| `.github/markdownlint/` | Tooling only: the Markdown linter CI runs, pinned with its whole dependency tree by lockfile and installed with `npm ci` outside the checkout |
 
 ## Prerequisites
 
