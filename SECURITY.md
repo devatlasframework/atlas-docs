@@ -19,18 +19,19 @@ internally. Please do not go looking for somewhere better to file it.
 This repository is updated when an ATLAS release is cut; the docs pages ship with the web app in the
 same release. Only what is current on `main` and `develop` is supported.
 
-| Version                        | Supported          | Notes                                                      |
-| ------------------------------ | ------------------ | ---------------------------------------------------------- |
-| `main`                         | :white_check_mark: | The contract Production serves                             |
-| `develop`                      | :white_check_mark: | Staged content — report anything you find here too         |
-| Archived or cached older pages | :x:                | Snapshots and third-party mirrors are not maintained by us |
+| Version                        | Supported          | Notes                                                              |
+| ------------------------------ | ------------------ | ------------------------------------------------------------------ |
+| `develop`                      | :white_check_mark: | The newest mirrored contract — 1.12.0, from release 0.16.0         |
+| `main`                         | :white_check_mark: | Takes the contract when a release reaches Production; none has yet |
+| Archived or cached older pages | :x:                | Snapshots and third-party mirrors are not maintained by us         |
 
 The **OpenAPI description** in `api/` is copied from the platform's own `packages/api-spec` when a
-release is cut, and [`api/MIRROR.md`](api/MIRROR.md) names which contract version it is. On `main` it
-describes the API currently in Production. On `develop` it can describe a contract that is in
-testing and has **not reached Production yet**. Report anything you find in either. Documented API versions follow
-the platform's own deprecation policy; documentation for a retired API version is removed rather
-than maintained.
+release is cut, and [`api/MIRROR.md`](api/MIRROR.md) names which contract version it is. **No ATLAS
+environment has a public address yet**, so no contract here describes an API you can reach: the
+copy on `develop` is the one the newest release (signed off on QA, not yet in Production) serves,
+and `main` will take it when a release reaches Production. Report anything you find in either.
+Documented API versions follow the platform's own deprecation policy; documentation for a retired
+API version is removed rather than maintained.
 
 ---
 
@@ -156,6 +157,38 @@ We practise **coordinated disclosure**.
 - **You will be credited by name or handle** unless you ask us not to.
 - Please do not publish before the fix or advisory goes out. If you have a hard publication
   deadline, say so in your first message and we will work to it.
+
+---
+
+## What is in place
+
+This repository holds two mirrored files and their stamp; it builds and serves nothing. The docs
+pages are served by the ATLAS web app at `/docs`, so their headers, content-security policy and
+TLS are the web app's, covered by the `atlas` policy. What guards this repository is a row below,
+and each row names the script or CI step that holds it. `scripts/security/check-security-claims.mjs`
+reads the table in CI and fails a built row whose evidence does not exist.
+
+<!-- claims:start -->
+
+| Control                                                                                                                                                                | Status   | Evidence                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Integrity.** The mirrored contract and changelog must match the sha256 their stamp records, and a hand edit fails CI                                                 | built    | `.github/scripts/verify-mirror.mjs#const STAMP` `.github/workflows/ci.yml#node .github/scripts/verify-mirror.mjs` `api/MIRROR.md#sha256`                                                                                                                           |
+| **Secrets.** gitleaks scans every pull request, and a pre-commit hook scans locally                                                                                    | built    | `.github/workflows/ci.yml#gitleaks/gitleaks-action` `.githooks/pre-commit`                                                                                                                                                                                         |
+| **Supply chain.** Every workflow action is pinned by commit SHA, and the Markdown linter with its whole dependency tree by lockfile, installed without install scripts | built    | `scripts/ci/check-action-pins.mjs` `.github/workflows/ci.yml#node scripts/ci/check-action-pins.mjs` `.github/markdownlint/package-lock.json#"markdownlint-cli2": "0.23.3"` `.github/workflows/ci.yml#npm ci --prefix "$RUNNER_TEMP/markdownlint" --ignore-scripts` |
+| **Supply chain.** Dependabot proposes updates for the actions and the Markdown linter's lockfile                                                                       | built    | `.github/dependabot.yml#directory: /.github/markdownlint`                                                                                                                                                                                                          |
+| **This table.** CI fails a built row here whose evidence does not exist                                                                                                | built    | `scripts/security/check-security-claims.mjs#export function check` `.github/workflows/ci.yml#check-security-claims.mjs SECURITY.md`                                                                                                                                |
+| **Docs pages.** Served over HTTPS only, with HSTS, once the web app has a public Production (J4-F12, in `atlas`)                                                       | owed: J8 | —                                                                                                                                                                                                                                                                  |
+
+<!-- claims:end -->
+
+What the table does not say:
+
+- **`verify-mirror` keeps the copy honest after it lands; it cannot see where the copy came from.**
+  The mirror script in the private infrastructure repository refuses to copy a contract unless the
+  release branch's own checks passed at that exact commit.
+- **Required checks.** `markdownlint`, `gitleaks` and `verify-mirror` block a merge. `action-pins`
+  runs on every pull request and is written to be required; adding it to the branch ruleset is the
+  maintainer's act.
 
 ---
 

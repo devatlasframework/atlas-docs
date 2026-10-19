@@ -1,0 +1,44 @@
+# Dependabot keeps the pins current (J4 criterion 12, ATLAS-735; #247): every `uses:` here is pinned
+# by commit SHA (scripts/ci/check-action-pins.mjs), and a pin nobody moves rots. Each bump is a
+# reviewed PR into develop with a Conventional Commit title; minor and patch updates are grouped, a
+# major arrives alone; a 7-day cooldown keeps a brand-new release from being proposed before it has
+# been public for a week.
+#
+# The one package manifest is tooling, not a build: .github/markdownlint/ pins markdownlint-cli2 and
+# its whole tree by lockfile (ci.yml installs it with `npm ci`), and the npm entry below moves it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Colombo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  # markdownlint-cli2, installed from its own lockfile (.github/markdownlint/).
+  - package-ecosystem: npm
+    directory: /.github/markdownlint
+    target-branch: develop
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Colombo
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      markdownlint-tooling:
+        update-types: [minor, patch]
