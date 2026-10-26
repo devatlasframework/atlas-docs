@@ -24,6 +24,11 @@ jobs:
       # sha512 the lockfile records, and none runs an install script. Installed OUTSIDE the
       # workspace, so the repository itself still carries no node_modules and no site toolchain.
       # Dependabot's npm entry for /.github/markdownlint proposes the bumps.
+      # Its package.json `overrides` pin three transitive packages past their advisories (ATLAS-759):
+      # markdown-it 15.0.3 and smol-toml 1.9.0 inside the ranges markdownlint-cli2 0.23.3 pins, and
+      # katex 0.18.2 over micromark-extension-math's ^0.16 - the 0.16 line has no fix, and the linter
+      # only parses math, never renders it with katex. EXIT CONDITION: a markdownlint-cli2 bump whose
+      # own tree resolves at or above each of them - then delete the block and regenerate the lockfile.
       - name: Install markdownlint-cli2 from its lockfile
         run: |
           set -eu
